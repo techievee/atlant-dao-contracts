@@ -1,6 +1,7 @@
 pragma solidity ^0.4.11;
 
 import "./TokenRecipient.sol";
+import "./PTO.sol";
 
 contract PropertyPlatform is tokenRecipient{
     //Lawyer[] lawyers; //there will be an array of lawyers in the future
@@ -8,6 +9,7 @@ contract PropertyPlatform is tokenRecipient{
 		Property[] properties;
 
 		event PropertyAdded(string propertyName, uint propertyPrice, uint propertyArea);
+		event PropertyApproved(uint propertyId, bool approved);
 
 		struct Lawyer {
 			string name;
@@ -20,6 +22,10 @@ contract PropertyPlatform is tokenRecipient{
 			uint price;
 			uint area;
 			Lawyer assignedLawyer;
+			address seller;
+			PTO pto;
+			bool approved;
+			bool lawyerReviewed;
 		}
 
 		//constructor
@@ -30,9 +36,10 @@ contract PropertyPlatform is tokenRecipient{
     }
 
 		//function to view prperties for sale
-		function viewProperty(uint propertyID) constant returns (string name, uint price, uint area){
+		function viewProperty(uint propertyID) constant
+		returns (string name, uint price, uint area, address seller, bool lawyerReviewed, bool approved, address pto) {
 			Property storage prop = properties[propertyID];
-			return (prop.name, prop.price, prop.area);
+			return (prop.name, prop.price, prop.area, prop.seller, prop.lawyerReviewed, prop.approved, prop.pto);
 		}
 
 		function addPropertyForSale(string propertyName, uint propertyPrice, uint propertyArea, bool propertyIsOK) payable returns (uint propertyID)  {
@@ -46,8 +53,28 @@ contract PropertyPlatform is tokenRecipient{
 			p.name = propertyName;
 			p.price = propertyPrice;
 			p.area = propertyArea;
+			p.seller = msg.sender;
 
-			p.assignedLawyer.lawyerAddress.transfer(p.assignedLawyer.fee * 1 ether); //pay the lawyer
 			PropertyAdded(propertyName, propertyPrice, propertyArea);
+		}
+
+		function approveProperty(uint propertyID, bool approved) {
+			Property storage p = properties[propertyID];
+			require (p.assignedLawyer.lawyerAddress == msg.sender);
+
+			//prevent double spending on lawyer
+			if (!p.lawyerReviewed) {
+				p.assignedLawyer.lawyerAddress.transfer(p.assignedLawyer.fee * 1 ether); //pay the lawyer
+				p.lawyerReviewed = true;
+			}
+			p.approved = approved;
+
+			PropertyApproved(propertyID, approved);
+		}
+
+		function launchPTO(uint propertyID, uint ptoFee) internal {
+			Property storage p = properties[propertyID];
+			require(p.seller == msg.sender && p.approved);
+			p.pto = new PTO(p.seller, ptoFee, propertyID, p.assignedLawyer.lawyerAddress);
 		}
 }

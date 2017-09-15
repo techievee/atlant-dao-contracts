@@ -1,11 +1,11 @@
 pragma solidity ^0.4.11;
 
 import "./Owned.sol";
-import "./TokenRecipient.sol";
+import "./PropertyPlatform.sol";
 import "./ATL.sol";
 
 /* The shareholder association contract itself */
-contract Association is owned, tokenRecipient {
+contract Association is owned, PropertyPlatform {
 
     /* Contract Variables and events */
     uint public minimumQuorum;
@@ -44,7 +44,8 @@ contract Association is owned, tokenRecipient {
     }
 
     /* First time setup */
-    function Association(ATL sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate, uint defaultPercentFee) payable {
+    function Association(ATL sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate, uint defaultPercentFee, string lawyerName,
+			uint lawyerFee, address lawyerAddress) PropertyPlatform(lawyerName, lawyerFee, lawyerAddress) {
 				percentFee = defaultPercentFee;
 				changeVotingRules(sharesAddress, minimumSharesToPassAVote, minutesForDebate);
     }
@@ -126,7 +127,6 @@ contract Association is owned, tokenRecipient {
             }
         }
 
-
         /* execute result */
         require (quorum >= minimumQuorum); /* Not enough significant voters */
 
@@ -141,4 +141,8 @@ contract Association is owned, tokenRecipient {
         // Fire Events
         ProposalTallied(proposalNumber, yea - nay, quorum, p.proposalPassed);
     }
+
+		function launchPropertySale(uint propertyID) external{
+			super.launchPTO(propertyID, percentFee);
+		}
 }
