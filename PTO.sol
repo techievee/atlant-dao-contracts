@@ -3,6 +3,8 @@ pragma solidity ^0.4.11;
 import "./installed/token/ERC20.sol";
 import "./PropertyToken.sol";
 import "./PropertyDAO.sol";
+import "./DAO.sol";
+import "./ATL.sol";
 
 contract PTO {
 
@@ -14,6 +16,12 @@ contract PTO {
 
 	mapping (address => uint) public investors; //mapping in case of ETH moneyback
 	address[] investorArray; //address array for looping through mapping
+
+	Association public association;
+	ATL public atl;
+	//mapping (address => uint) public propertyRecipients;
+	address[] public atlHolders; //array of ATL token holders
+	uint public numberOfBeneficiaries;
 
   event Buy(address holder, uint propertyTokenValue);
   event RunPto();
@@ -34,18 +42,28 @@ contract PTO {
   enum PtoState { Created, Running, Paused, Finished, Cancelled }
   PtoState ptoState = PtoState.Created;
 
-  function PTO(address _propertyOwner, uint ptoFee, uint _propertyID, address _lawyer){ //, address _manager) {
+  function PTO(address daoAddress, address _propertyOwner, uint ptoFee, uint _propertyID, address _lawyer){ //, address _manager) {
     propertyToken = new PropertyToken(this);
     propertyOwner = _propertyOwner;
 		PTO_FEE = ptoFee;
 		propertyID = _propertyID;
 		lawyer = _lawyer;
+
+		association = Association(daoAddress);
+		atl = ATL(association.sharesTokenAddress());
 		//manager = _manager;
   }
 
   function() external payable {
     buyFor(msg.sender);
   }
+
+	function getPtoBeneficiaries() internal {
+		numberOfBeneficiaries = association.numberOfBeneficiaries();
+		for (uint i = 0; i < numberOfBeneficiaries; i++) {
+			atlHolders.push(association.getBeneficiaryAddress(i));
+		}
+	}
 
   function buyFor(address _investor) public payable {
     require(ptoState == PtoState.Running);
@@ -66,16 +84,24 @@ contract PTO {
     PausePto();
   }
 
-  function finishPto(address _atlFund) external propertyOwnerOnly {
+	function distributeTokens() internal {
+		getPtoBeneficiaries();
+		for (uint i = 0; i < atlHolders.length; i++) {
+			if(propertyToken.balanceOf(atlHolders[i]) == 0) {
+				propertyToken.mint(atlHolders[i], atl.balanceOf(atlHolders[i]) * propertyToken.totalSupply() * PTO_FEE / atl.totalSupply());
+			}
+		}
+	}
+
+  function finishPto() external propertyOwnerOnly {
     require(ptoState == PtoState.Running || ptoState == PtoState.Paused);
 
-		uint soldTokens = propertyToken.totalSupply();
-    propertyToken.mint(_atlFund, PTO_FEE * soldTokens / 100); //temporary proxy for property token distributon among ATL holders
+    distributeTokens(); //temporary proxy for property token distributon among ATL holders
     propertyToken.unfreeze();
 
 		propertyAssociation = new PropertyAssociation(propertyToken);
 		propertyAssociation.transfer(this.balance * RESERVE_RATE / 100); //transfer a crtain percentage to the reserve fund
-		propertyOwner.transfer(this.balance);
+		propertyOwner.transfer(this.balance); //transfer the rest to property owner
 
     ptoState = PtoState.Finished;
     FinishPto();
@@ -92,15 +118,6 @@ contract PTO {
 		ptoState = PtoState.Cancelled;
 		CancelPto();
 	}
-
-  /*function withdrawEther(address recipient, uint _value) internal {
-    recipient.transfer(_value * 1 ether);
-  }*/
-
-  /*function withdrawToken(address _tokenContract, uint _val) external {
-    ERC20 _tok = ERC20(_tokenContract);
-    _tok.transfer(propertyOwner, _val);
-  }*/
 
   function buy(address _investor, uint _propertyTokenValue) internal returns (uint) {
     propertyToken.mint(_investor, _propertyTokenValue);

@@ -23,7 +23,7 @@ contract PropertyPlatform is tokenRecipient{
 			uint area;
 			Lawyer assignedLawyer;
 			address seller;
-			PTO pto;
+			//PTO pto;
 			bool approved;
 			bool lawyerReviewed;
 		}
@@ -37,9 +37,9 @@ contract PropertyPlatform is tokenRecipient{
 
 		//function to view prperties for sale
 		function viewProperty(uint propertyID) constant
-		returns (string name, uint price, uint area, address seller, bool lawyerReviewed, bool approved, address pto) {
+		returns (string name, uint price, uint area, address seller, bool lawyerReviewed, bool approved) {
 			Property storage prop = properties[propertyID];
-			return (prop.name, prop.price, prop.area, prop.seller, prop.lawyerReviewed, prop.approved, prop.pto);
+			return (prop.name, prop.price, prop.area, prop.seller, prop.lawyerReviewed, prop.approved);
 		}
 
 		function addPropertyForSale(string propertyName, uint propertyPrice, uint propertyArea, bool propertyIsOK) payable returns (uint propertyID)  {
@@ -72,9 +72,9 @@ contract PropertyPlatform is tokenRecipient{
 			PropertyApproved(propertyID, approved);
 		}
 
-		function launchPTO(uint propertyID, uint ptoFee) internal {
+		function launchPTO(address dao, uint propertyID, uint ptoFee) internal {
 			Property storage p = properties[propertyID];
 			require(p.seller == msg.sender && p.approved);
-			p.pto = new PTO(p.seller, ptoFee, propertyID, p.assignedLawyer.lawyerAddress);
+			new PTO(dao, p.seller, ptoFee, propertyID, p.assignedLawyer.lawyerAddress);
 		}
 }

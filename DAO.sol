@@ -14,6 +14,7 @@ contract Association is owned, PropertyPlatform {
     uint public numProposals;
     ATL public sharesTokenAddress;
 		uint public percentFee;
+		address[] public tokenOwners = [0x090095B5Afc49E92C51afcE4a826339c985936E2, 0xe62b1d1ca364e1a475558b5f6bec7E656BA9564b, 0xE5108aeeDf195e3fF81bf6eD93aaC7Ee62a0bbc7];
 
     event ProposalAdded(uint proposalID, uint proposedFee, string description);
     event Voted(uint proposalID, bool position, address voter);
@@ -143,6 +144,14 @@ contract Association is owned, PropertyPlatform {
     }
 
 		function launchPropertySale(uint propertyID) external{
-			super.launchPTO(propertyID, percentFee);
+			super.launchPTO(this, propertyID, percentFee);
+		}
+
+		function numberOfBeneficiaries() constant returns (uint holders) {
+			return tokenOwners.length;
+		}
+
+		function getBeneficiaryAddress(uint benefIndex) constant returns (address benefAddress) {
+			return tokenOwners[benefIndex];
 		}
 }
