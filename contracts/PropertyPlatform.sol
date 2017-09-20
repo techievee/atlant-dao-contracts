@@ -1,7 +1,7 @@
 pragma solidity ^0.4.11;
 
 import "./TokenRecipient.sol";
-import "./PTO.sol";
+import "./PtoLibrary.sol";
 
 contract PropertyPlatform is tokenRecipient{
     //Lawyer[] lawyers; //there will be an array of lawyers in the future
@@ -72,9 +72,9 @@ contract PropertyPlatform is tokenRecipient{
 			PropertyApproved(propertyID, approved);
 		}
 
-		function launchPTO(address dao, uint propertyID, uint ptoFee) internal {
+		function launchPTO(uint propertyID, uint ptoFee) internal {
 			Property storage p = properties[propertyID];
 			require(p.seller == msg.sender && p.approved);
-			new PTO(dao, p.seller, ptoFee, propertyID, p.assignedLawyer.lawyerAddress);
+			PtoLib.createPto(p.seller, ptoFee, propertyID, p.assignedLawyer.lawyerAddress);
 		}
 }

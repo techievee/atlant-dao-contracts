@@ -2,7 +2,6 @@ pragma solidity ^0.4.11;
 
 import "./Owned.sol";
 import "./PropertyPlatform.sol";
-import "./ATL.sol";
 
 /* The shareholder association contract itself */
 contract Association is owned, PropertyPlatform {
@@ -45,7 +44,7 @@ contract Association is owned, PropertyPlatform {
     }
 
     /* First time setup */
-    function Association(ATL sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate, uint defaultPercentFee, string lawyerName,
+    function Association(address sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate, uint defaultPercentFee, string lawyerName,
 			uint lawyerFee, address lawyerAddress) PropertyPlatform(lawyerName, lawyerFee, lawyerAddress) {
 				percentFee = defaultPercentFee;
 				changeVotingRules(sharesAddress, minimumSharesToPassAVote, minutesForDebate);
@@ -55,7 +54,7 @@ contract Association is owned, PropertyPlatform {
     /// @param sharesAddress token address
     /// @param minimumSharesToPassAVote proposal can vote only if the sum of shares held by all voters exceed this number
     /// @param minutesForDebate the minimum amount of delay between when a proposal is made and when it can be executed
-    function changeVotingRules(ATL sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) onlyOwner {
+    function changeVotingRules(address sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) onlyOwner {
         sharesTokenAddress = ATL(sharesAddress);
         if (minimumSharesToPassAVote == 0 ) minimumSharesToPassAVote = 1;
         minimumQuorum = minimumSharesToPassAVote;
@@ -143,8 +142,10 @@ contract Association is owned, PropertyPlatform {
         ProposalTallied(proposalNumber, yea - nay, quorum, p.proposalPassed);
     }
 
-		function launchPropertySale(uint propertyID) external{
-			super.launchPTO(this, propertyID, percentFee);
+		//function launchPropertySale(uint propertyID) external{
+		function launchPropertySale() external {
+			//super.launchPTO(propertyID, percentFee);
+			super.launchPTO();
 		}
 
 		function numberOfBeneficiaries() constant returns (uint holders) {

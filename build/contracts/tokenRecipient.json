@@ -1,0 +1,57 @@
+{
+  "contract_name": "tokenRecipient",
+  "abi": [
+    {
+      "payable": true,
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "receivedEther",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_extraData",
+          "type": "bytes"
+        }
+      ],
+      "name": "receivedTokens",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x60606040523415600e57600080fd5b5b60868061001d6000396000f30060606040525b5b7fa398b89ba344a0b23a0b9de53db298b2a1a868b396c1878b7e9dcbafecd49b13333460405173ffffffffffffffffffffffffffffffffffffffff909216825260208201526040908101905180910390a15b0000a165627a7a72305820e59ff15da0359ea102f7819d0badfa7c88b12a37d278740929e0d6dcbcc5e1160029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1505923903508
+}

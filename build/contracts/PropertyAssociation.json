@@ -1,0 +1,80 @@
+{
+  "contract_name": "PropertyAssociation",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "propertyTokenAddress",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "tokenAddress",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "payable": true,
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "receivedEther",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_extraData",
+          "type": "bytes"
+        }
+      ],
+      "name": "receivedTokens",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b604051602080610165833981016040528080519150505b60008054600160a060020a031916600160a060020a0383161790555b505b610112806100536000396000f30060606040523615603c5763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416633ab5245681146091575b5b7fa398b89ba344a0b23a0b9de53db298b2a1a868b396c1878b7e9dcbafecd49b13333460405173ffffffffffffffffffffffffffffffffffffffff909216825260208201526040908101905180910390a15b005b3415609b57600080fd5b60a160ca565b60405173ffffffffffffffffffffffffffffffffffffffff909116815260200160405180910390f35b60005473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a72305820d1c6d0fab74d28f9bf0e2f8f1c2f7db7c57826ac3f6fcdf481fcf1c66f4f349a0029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1505923903506
+}

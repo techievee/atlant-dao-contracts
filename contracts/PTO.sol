@@ -3,7 +3,6 @@ pragma solidity ^0.4.11;
 import "./installed/token/ERC20.sol";
 import "./PropertyToken.sol";
 import "./PropertyDAO.sol";
-import "./DAO.sol";
 import "./ATL.sol";
 
 contract PTO {
@@ -17,9 +16,9 @@ contract PTO {
 	mapping (address => uint) public investors; //mapping in case of ETH moneyback
 	address[] investorArray; //address array for looping through mapping
 
-	Association public association;
-	ATL public atl;
-	//mapping (address => uint) public propertyRecipients;
+	//address daoAddress;
+	//Association public association = Association(daoAddress);
+	ATL public atl = ATL(0x5D80e46379800f17c26D39C5f3f90cA0057CA196);
 	address[] public atlHolders; //array of ATL token holders
 	uint public numberOfBeneficiaries;
 
@@ -34,36 +33,30 @@ contract PTO {
 
   address public propertyOwner;
 	address public lawyer;
-	//address public manager;
   modifier propertyOwnerOnly { require(msg.sender == propertyOwner); _; }
 	modifier lawyerOnly { require(msg.sender == lawyer); _; }
-	//modifier managerOnly { require(msg.sender == manager); _; }
 
   enum PtoState { Created, Running, Paused, Finished, Cancelled }
   PtoState ptoState = PtoState.Created;
 
-  function PTO(address daoAddress, address _propertyOwner, uint ptoFee, uint _propertyID, address _lawyer){ //, address _manager) {
+  function PTO(address _propertyOwner, uint ptoFee, uint _propertyID, address _lawyer){ //, address _manager) {
     propertyToken = new PropertyToken(this);
     propertyOwner = _propertyOwner;
 		PTO_FEE = ptoFee;
 		propertyID = _propertyID;
 		lawyer = _lawyer;
-
-		association = Association(daoAddress);
-		atl = ATL(association.sharesTokenAddress());
-		//manager = _manager;
+		//daoAddress = dao;
   }
 
   function() external payable {
     buyFor(msg.sender);
   }
 
-	function getPtoBeneficiaries() internal {
-		numberOfBeneficiaries = association.numberOfBeneficiaries();
+	/*function getPtoBeneficiaries() internal {
 		for (uint i = 0; i < numberOfBeneficiaries; i++) {
 			atlHolders.push(association.getBeneficiaryAddress(i));
 		}
-	}
+	}*/
 
   function buyFor(address _investor) public payable {
     require(ptoState == PtoState.Running);
@@ -85,7 +78,7 @@ contract PTO {
   }
 
 	function distributeTokens() internal {
-		getPtoBeneficiaries();
+		//getPtoBeneficiaries();
 		for (uint i = 0; i < atlHolders.length; i++) {
 			if(propertyToken.balanceOf(atlHolders[i]) == 0) {
 				propertyToken.mint(atlHolders[i], atl.balanceOf(atlHolders[i]) * propertyToken.totalSupply() * PTO_FEE / atl.totalSupply());
