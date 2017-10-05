@@ -11,14 +11,15 @@ contract Association is owned, PropertyPlatform {
     uint public debatingPeriodInMinutes;
     Proposal[] public proposals;
     uint public numProposals;
-    ATL public sharesTokenAddress;
+    ERC20 public sharesTokenAddress;
 		uint public percentFee;
-		address[] public tokenOwners = [0x090095B5Afc49E92C51afcE4a826339c985936E2, 0xe62b1d1ca364e1a475558b5f6bec7E656BA9564b, 0xE5108aeeDf195e3fF81bf6eD93aaC7Ee62a0bbc7];
+		mapping(address => bool) public ptoBeneficiaries;
 
     event ProposalAdded(uint proposalID, uint proposedFee, string description);
     event Voted(uint proposalID, bool position, address voter);
     event ProposalTallied(uint proposalID, uint result, uint quorum, bool active);
-    event ChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes, address newSharesTokenAddress);
+    event ChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes);
+		event AddPropertyBeneficiary(address beneficiaryAddress);
 
     struct Proposal {
 			uint proposedFee;
@@ -44,22 +45,17 @@ contract Association is owned, PropertyPlatform {
     }
 
     /* First time setup */
-    function Association(address sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate, uint defaultPercentFee, string lawyerName,
-			uint lawyerFee, address lawyerAddress) PropertyPlatform(lawyerName, lawyerFee, lawyerAddress) {
+    function Association(address sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate, uint defaultPercentFee, string lawyerName, uint lawyerFee, address lawyerAddress) PropertyPlatform(lawyerName, lawyerFee, lawyerAddress) {
 				percentFee = defaultPercentFee;
-				changeVotingRules(sharesAddress, minimumSharesToPassAVote, minutesForDebate);
+				sharesTokenAddress = ERC20(sharesAddress);
+				changeVotingRules(minimumSharesToPassAVote, minutesForDebate);
     }
 
-    /// @notice Make so that proposals need tobe discussed for at least `minutesForDebate/60` hours and all voters combined must own more than `minimumSharesToPassAVote` shares of token `sharesAddress` to be executed
-    /// @param sharesAddress token address
-    /// @param minimumSharesToPassAVote proposal can vote only if the sum of shares held by all voters exceed this number
-    /// @param minutesForDebate the minimum amount of delay between when a proposal is made and when it can be executed
-    function changeVotingRules(address sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) onlyOwner {
-        sharesTokenAddress = ATL(sharesAddress);
+    function changeVotingRules(uint minimumSharesToPassAVote, uint minutesForDebate) onlyOwner {
         if (minimumSharesToPassAVote == 0 ) minimumSharesToPassAVote = 1;
         minimumQuorum = minimumSharesToPassAVote;
         debatingPeriodInMinutes = minutesForDebate;
-        ChangeOfRules(minimumQuorum, debatingPeriodInMinutes, sharesTokenAddress);
+        ChangeOfRules(minimumQuorum, debatingPeriodInMinutes);
     }
 
     function newFeeProposal(uint proposedFee, string JobDescription, bytes transactionBytecode) onlyShareholders
@@ -106,8 +102,8 @@ contract Association is owned, PropertyPlatform {
     function executeProposal(uint proposalNumber, bytes transactionBytecode) {
         Proposal storage p = proposals[proposalNumber];
         /* Check if the proposal can be executed */
-        require (now > p.votingDeadline  /* has the voting deadline passed? */
-            &&  !p.executed        /* has it been already executed? */
+        require (now >= p.votingDeadline  /* has the voting deadline passed? */
+            && !p.executed        /* has it been already executed? */
             &&  p.proposalHash == sha3(p.proposedFee, transactionBytecode)); /* Does the transaction code match the proposal? */
 
 
@@ -142,17 +138,15 @@ contract Association is owned, PropertyPlatform {
         ProposalTallied(proposalNumber, yea - nay, quorum, p.proposalPassed);
     }
 
-		//function launchPropertySale(uint propertyID) external{
-		function launchPropertySale() external {
-			//super.launchPTO(propertyID, percentFee);
-			super.launchPTO();
+		function launchPropertySale(uint propertyID) external{
+			super.launchPTO(sharesTokenAddress, propertyID, percentFee, this);
 		}
 
-		function numberOfBeneficiaries() constant returns (uint holders) {
-			return tokenOwners.length;
-		}
-
-		function getBeneficiaryAddress(uint benefIndex) constant returns (address benefAddress) {
-			return tokenOwners[benefIndex];
+		function addSelfToBeneficiaries() {
+			require(sharesTokenAddress.balanceOf(msg.sender) > 0);
+			if (!ptoBeneficiaries[msg.sender]) { //check if address is already eligible for receiving property tokens
+				AddPropertyBeneficiary(msg.sender);
+				ptoBeneficiaries[msg.sender] = true;
+			}
 		}
 }

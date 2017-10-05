@@ -1,15 +1,15 @@
 pragma solidity ^0.4.11;
 
-import "./TokenRecipient.sol";
-import "./PtoLibrary.sol";
+import "./PTO.sol";
 
-contract PropertyPlatform is tokenRecipient{
-    //Lawyer[] lawyers; //there will be an array of lawyers in the future
+contract PropertyPlatform {
 		Lawyer public lawyer;
-		Property[] properties;
+		mapping(uint => Property) properties;
+		uint public numberOfProperties;
 
 		event PropertyAdded(string propertyName, uint propertyPrice, uint propertyArea);
 		event PropertyApproved(uint propertyId, bool approved);
+		event PtoLaunched(address ptoAddress);
 
 		struct Lawyer {
 			string name;
@@ -23,7 +23,7 @@ contract PropertyPlatform is tokenRecipient{
 			uint area;
 			Lawyer assignedLawyer;
 			address seller;
-			//PTO pto;
+			PTO pto;
 			bool approved;
 			bool lawyerReviewed;
 		}
@@ -38,14 +38,14 @@ contract PropertyPlatform is tokenRecipient{
 		//function to view prperties for sale
 		function viewProperty(uint propertyID) constant
 		returns (string name, uint price, uint area, address seller, bool lawyerReviewed, bool approved) {
-			Property storage prop = properties[propertyID];
+			Property memory prop = properties[propertyID];
 			return (prop.name, prop.price, prop.area, prop.seller, prop.lawyerReviewed, prop.approved);
 		}
 
 		function addPropertyForSale(string propertyName, uint propertyPrice, uint propertyArea, bool propertyIsOK) payable returns (uint propertyID)  {
 			require(propertyIsOK == true); //placeholder for property checks
 
-			propertyID = properties.length++;
+			propertyID = ++numberOfProperties;
 			Property storage p = properties[propertyID];
 			p.assignedLawyer = lawyer;
 			require(msg.value == (p.assignedLawyer.fee * 1 ether)); //check property seller has sent enough money to pay fee
@@ -64,17 +64,26 @@ contract PropertyPlatform is tokenRecipient{
 
 			//prevent double spending on lawyer
 			if (!p.lawyerReviewed) {
-				p.assignedLawyer.lawyerAddress.transfer(p.assignedLawyer.fee * 1 ether); //pay the lawyer
 				p.lawyerReviewed = true;
+				p.assignedLawyer.lawyerAddress.transfer(p.assignedLawyer.fee * 1 ether); //pay the lawyer
 			}
 			p.approved = approved;
 
 			PropertyApproved(propertyID, approved);
 		}
 
-		function launchPTO(uint propertyID, uint ptoFee) internal {
+		function launchPTO(address sharesToken, uint propertyID, uint ptoFee, address dao) internal {
 			Property storage p = properties[propertyID];
 			require(p.seller == msg.sender && p.approved);
-			PtoLib.createPto(p.seller, ptoFee, propertyID, p.assignedLawyer.lawyerAddress);
+			p.pto = new PTO(sharesToken, p.seller, ptoFee, propertyID, p.assignedLawyer.lawyerAddress, dao);
+			PtoLaunched(p.pto);
+		}
+
+		function distributeProperty(uint propertyID, address[] atlHolders) external {
+			Property memory p = properties[propertyID];
+			require(p.seller == msg.sender);
+			for (uint i=0; i<atlHolders.length; i++) {
+				p.pto.distributeTokens(atlHolders[i]);
+			}
 		}
 }
